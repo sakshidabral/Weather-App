@@ -15,7 +15,7 @@ pipeline {
 
         stage('Build Backend') {
             steps {
-                dir('backend') {
+                dir('weather-backend') {
                     bat 'dotnet restore'
                     bat 'dotnet build --configuration Release'
                     bat 'dotnet publish -c Release -o publish'
@@ -25,7 +25,7 @@ pipeline {
 
         stage('Build Frontend') {
             steps {
-                dir('frontend') {
+                dir('weather-frontend') {
                     bat 'npm install'
                     bat 'npm run build'
                 }
@@ -34,13 +34,13 @@ pipeline {
 
         stage('Archive Backend') {
             steps {
-                archiveArtifacts artifacts: 'backend/publish/**'
+                archiveArtifacts artifacts: 'weather-backend/publish/**'
             }
         }
 
         stage('Archive Frontend') {
             steps {
-                archiveArtifacts artifacts: 'frontend/dist/**'
+                archiveArtifacts artifacts: 'weather-frontend/dist/**'
             }
         }
     }
