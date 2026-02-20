@@ -1,0 +1,52 @@
+<div class="app-container">
+
+  <div class="card">
+
+    <h2>🌤 Weather App</h2>
+
+    <!-- LOGIN -->
+    <div *ngIf="!token" class="login-section">
+
+      <input type="text"
+             [(ngModel)]="username"
+             placeholder="Username">
+
+      <input type="password"
+             [(ngModel)]="password"
+             placeholder="Password">
+
+      <button (click)="login()">Login</button>
+
+    </div>
+
+    <!-- LOGOUT -->
+    <div *ngIf="token">
+      <button (click)="logout()">Logout</button>
+      <hr>
+    </div>
+
+    <!-- WEATHER -->
+    <div *ngIf="token">
+
+      <input type="text"
+             [(ngModel)]="city"
+             placeholder="Enter city name">
+
+      <button (click)="getWeather()">Check Weather</button>
+
+      <div *ngIf="weather" class="result">
+        <div class="temp-bubble"
+             [ngClass]="getTemperatureClass()">
+          {{weather.temperature}}°C
+        </div>
+
+        <p><strong>City:</strong> {{weather.city}}</p>
+        <p><strong>Latitude:</strong> {{weather.latitude}}</p>
+        <p><strong>Longitude:</strong> {{weather.longitude}}</p>
+      </div>
+
+    </div>
+
+  </div>
+
+</div>
