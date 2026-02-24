@@ -2,8 +2,19 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using StackExchange.Redis;
+using Serilog;
+
+Log.Logger = new LoggerConfiguration()
+    .MinimumLevel.Information()
+    .WriteTo.Console()
+    .WriteTo.File(
+        "Logs/weatherapp-.log",
+        rollingInterval: RollingInterval.Day)
+    .CreateLogger();
 
 var builder = WebApplication.CreateBuilder(args);
+
+builder.Host.UseSerilog();
 
 // Add Controllers
 builder.Services.AddControllers();
@@ -58,6 +69,8 @@ builder.Services.AddSingleton<IConnectionMultiplexer>(sp =>
 });
 
 var app = builder.Build();
+
+app.UseSerilogRequestLogging();
 
 app.UseCors("AllowAngular");
 
