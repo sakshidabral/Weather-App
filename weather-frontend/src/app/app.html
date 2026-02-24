@@ -4,8 +4,26 @@
 
     <h2>🌤 Weather App</h2>
 
+    <!-- SIGNUP -->
+    <div *ngIf="!token && !showLogin" class="signup-section">
+      <input type="text"
+             [(ngModel)]="signupUsername"
+             placeholder="New Username">
+
+      <input type="password"
+             [(ngModel)]="signupPassword"
+             placeholder="New Password">
+
+      <button (click)="signup()">Signup</button>
+      <p *ngIf="signupMessage">{{signupMessage}}</p>
+      <p>
+        Already have an account? 
+        <a href="#" (click)="showLogin = true; showSignup=false;">Login here</a>
+      </p>
+    </div>
+
     <!-- LOGIN -->
-    <div *ngIf="!token" class="login-section">
+    <div *ngIf="!token && showLogin" class="login-section">
 
       <input type="text"
              [(ngModel)]="username"
@@ -16,7 +34,12 @@
              placeholder="Password">
 
       <button (click)="login()">Login</button>
+      <p *ngIf="loginMessage">{{loginMessage}}</p>
 
+      <p>
+        Don't have an account? 
+        <a href="#" (click)="showLogin = false; showSignup=true;">Signup here</a>
+      </p>
     </div>
 
     <!-- LOGOUT -->
@@ -41,8 +64,6 @@
         </div>
 
         <p><strong>City:</strong> {{weather.city}}</p>
-        <p><strong>Latitude:</strong> {{weather.latitude}}</p>
-        <p><strong>Longitude:</strong> {{weather.longitude}}</p>
       </div>
 
     </div>

@@ -13,19 +13,51 @@ import { ChangeDetectorRef } from '@angular/core';
 })
 export class App {
 
+  // ---------------- AUTH ----------------
   username: string = '';
   password: string = '';
   token: string | null = localStorage.getItem('token'); // ✅ load from storage
 
+  signupUsername: string = '';
+  signupPassword: string = '';
+  signupMessage: string = '';
+  showLogin: boolean = true;
+  showSignup: boolean = false;
+  loginMessage: string = '';
+
+  // ---------------- WEATHER ----------------
   city: string = '';
   weather: any;
   error: string = '';
 
-  private apiBase = 'http://localhost:5149/api';
+  private apiBase = 'http://localhost:5149/api'; // your backend URL
 
   constructor(private http: HttpClient, private cd: ChangeDetectorRef) {}
 
-  // ✅ LOGIN
+  // ---------------- SIGNUP ----------------
+  signup() {
+    const payload = {
+      username: this.signupUsername,
+      password: this.signupPassword
+    };
+
+    this.http.post(`${this.apiBase}/auth/signup`, payload, { responseType: 'text' })
+      .subscribe({
+        next: (res) => {
+          this.signupMessage = res;
+          // Redirect to login form after successful signup
+          this.showLogin = true;
+          this.showSignup = false;
+          this.signupUsername = '';
+          this.signupPassword = '';
+        },
+        error: (err) => {
+          this.signupMessage = err.error;
+        }
+      });
+  }
+
+  // ---------------- LOGIN ----------------
   login() {
     this.http.post<any>(`${this.apiBase}/auth/login`, {
       username: this.username,
@@ -34,15 +66,16 @@ export class App {
       next: (res) => {
         this.token = res.token;
         localStorage.setItem('token', this.token!); // ✅ store token
-        alert('Login successful 💖');
+        this.loginMessage = "Login successful";
+        this.error = '';
       },
       error: () => {
-        alert('Invalid credentials');
+        this.loginMessage = "Invalid credentials";
       }
     });
   }
 
-  // ✅ LOGOUT
+  // ---------------- LOGOUT ----------------
   logout() {
     this.token = null;
     localStorage.removeItem('token');
@@ -50,7 +83,7 @@ export class App {
     this.city = '';
   }
 
-  // ✅ WEATHER (Protected)
+  // ---------------- WEATHER ----------------
   getWeather() {
     if (!this.city.trim()) {
       this.error = "Please enter a city name";
@@ -81,7 +114,7 @@ export class App {
       });
   }
 
-  // ✅ Dynamic temperature class
+  // ---------------- TEMPERATURE CLASS ----------------
   getTemperatureClass(): string {
     if (!this.weather) return '';
 

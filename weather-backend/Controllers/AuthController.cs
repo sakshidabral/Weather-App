@@ -3,60 +3,77 @@ using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
+using System.Text.Json;
 
-namespace WeatherApi.Controllers
+[ApiController]
+[Route("api/[controller]")]
+public class AuthController : ControllerBase
 {
-    [ApiController]
-    [Route("api/[controller]")]
-    public class AuthController : ControllerBase
+    private readonly IConfiguration _configuration;
+    private readonly string _filePath = "users.json"; // store users in project root
+
+    public AuthController(IConfiguration configuration)
     {
-        private readonly IConfiguration _configuration;
-
-        public AuthController(IConfiguration configuration)
-        {
-            _configuration = configuration;
-        }
-
-        [HttpPost("login")]
-        public IActionResult Login([FromBody] LoginRequest request)
-        {
-            // Simple hardcoded user (for beginner project)
-            if (request.Username != "sakshi" || request.Password != "1234")
-            {
-                return Unauthorized("Invalid username or password");
-            }
-
-            var jwtSettings = _configuration.GetSection("Jwt");
-            var key = Encoding.UTF8.GetBytes(jwtSettings["Key"]);
-
-            var claims = new[]
-            {
-                new Claim(ClaimTypes.Name, request.Username)
-            };
-
-            var token = new JwtSecurityToken(
-                issuer: jwtSettings["Issuer"],
-                audience: jwtSettings["Audience"],
-                claims: claims,
-                expires: DateTime.Now.AddMinutes(Convert.ToDouble(jwtSettings["DurationInMinutes"])),
-                signingCredentials: new SigningCredentials(
-                    new SymmetricSecurityKey(key),
-                    SecurityAlgorithms.HmacSha256)
-            );
-
-            var tokenString = new JwtSecurityTokenHandler().WriteToken(token);
-
-            return Ok(new
-            {
-                Token = tokenString
-            });
-        }
+        _configuration = configuration;
     }
 
-    // Simple Login Model
-    public class LoginRequest
+    // ------------------ SIGNUP ------------------
+    [HttpPost("signup")]
+    public IActionResult Signup([FromBody] User user)
     {
-        public string Username { get; set; }
-        public string Password { get; set; }
+        // Read existing users from JSON
+        var users = System.IO.File.Exists(_filePath)
+            ? JsonSerializer.Deserialize<List<User>>(System.IO.File.ReadAllText(_filePath))
+            : new List<User>();
+
+        if (users == null) users = new List<User>();
+
+        // Check if username already exists
+        if (users.Any(u => u.Username == user.Username))
+            return BadRequest("Username already exists");
+
+        // Add new user
+        users.Add(user);
+        System.IO.File.WriteAllText(_filePath, JsonSerializer.Serialize(users));
+
+        return Ok("User created successfully");
     }
+
+    // ------------------ LOGIN ------------------
+    [HttpPost("login")]
+    public IActionResult Login([FromBody] User login)
+    {
+        // Read users from JSON
+        var users = System.IO.File.Exists(_filePath)
+            ? JsonSerializer.Deserialize<List<User>>(System.IO.File.ReadAllText(_filePath))
+            : new List<User>();
+
+        if (users == null) users = new List<User>();
+
+        // Check username/password
+        var user = users.FirstOrDefault(u => u.Username == login.Username && u.Password == login.Password);
+        if (user == null)
+            return Unauthorized("Invalid username or password");
+
+        // Generate JWT token
+        var key = Encoding.UTF8.GetBytes(_configuration["Jwt:Key"]);
+        var creds = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256);
+
+        var token = new JwtSecurityToken(
+            issuer: _configuration["Jwt:Issuer"],
+            audience: _configuration["Jwt:Audience"],
+            claims: new[] { new Claim(ClaimTypes.Name, user.Username) },
+            expires: DateTime.Now.AddHours(1),
+            signingCredentials: creds
+        );
+
+        return Ok(new { token = new JwtSecurityTokenHandler().WriteToken(token) });
+    }
+}
+
+// ------------------ USER MODEL ------------------
+public class User
+{
+    public string Username { get; set; }
+    public string Password { get; set; }
 }
