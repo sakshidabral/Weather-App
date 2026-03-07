@@ -3,6 +3,7 @@ using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using StackExchange.Redis;
 using Serilog;
+using Microsoft.EntityFrameworkCore;
 
 Log.Logger = new LoggerConfiguration()
     .MinimumLevel.Information()
@@ -18,6 +19,8 @@ builder.Host.UseSerilog();
 
 // Add Controllers
 builder.Services.AddControllers();
+builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<IWeatherService, WeatherService>();
 
 // ADD CORS
 builder.Services.AddCors(options =>
@@ -67,6 +70,10 @@ builder.Services.AddSingleton<IConnectionMultiplexer>(sp =>
 
     return ConnectionMultiplexer.Connect(configuration);
 });
+
+builder.Services.AddDbContext<AppDbContext>(options =>
+    options.UseSqlServer(
+        builder.Configuration.GetConnectionString("DefaultConnection")));
 
 var app = builder.Build();
 
